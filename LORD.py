@@ -4,6 +4,7 @@ from pytube import YouTube
 from mutagen.easyid3 import EasyID3
 from youtubesearchpython import VideosSearch
 import os
+import re
 
 TOKEN = os.getenv('TELEGRAM_TOKEN')
 
@@ -12,6 +13,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         'أهلاً! استخدم كلمة "تحميل" متبوعًا باسم الأغنية للبحث عنها وتنزيلها.',
         reply_to_message_id=update.message.message_id
     )
+
+async def sanitize_filename(filename: str) -> str:
+    # Remove or replace invalid characters
+    return re.sub(r'[\\/*?:"<>|]', "", filename)
 
 async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_text = update.message.text
@@ -36,7 +41,7 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         'جاري تحميل الأغنية...',
         reply_to_message_id=update.message.message_id
     )
-
+    
     try:
         videos_search = VideosSearch(query, limit=1)
         results = videos_search.result()
@@ -52,7 +57,9 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         yt = YouTube(video_url)
         audio_stream = yt.streams.filter(only_audio=True).first()
-        file_name = audio_stream.download(filename=f"{yt.title}.mp3")
+        
+        sanitized_title = await sanitize_filename(yt.title)
+        file_name = audio_stream.download(filename=f"{sanitized_title}.mp3")
 
         # تعديل البيانات الوصفية للملف الصوتي
         audio = EasyID3(file_name)
