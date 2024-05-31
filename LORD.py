@@ -1,7 +1,6 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from youtube_search import YoutubeSearch
-import yt_dlp as youtube_dl
+from pytube import Search, YouTube
 import os
 
 TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -22,24 +21,19 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     try:
-        results = YoutubeSearch(query, max_results=1).to_dict()
+        search = Search(query)
+        results = search.results
         if not results:
             await update.message.reply_text('لم يتم العثور على نتائج.')
             return
-        
-        video_url = f"https://www.youtube.com{results[0]['url_suffix']}"
-        
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': '%(title)s.%(ext)s',
-            'quiet': True,
-            'noplaylist': True,
-        }
 
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(video_url, download=True)
-            file_name = ydl.prepare_filename(info_dict)
-        
+        video = results[0]
+        video_url = video.watch_url
+
+        yt = YouTube(video_url)
+        audio_stream = yt.streams.filter(only_audio=True).first()
+        file_name = audio_stream.download(filename=f"{yt.title}.mp3")
+
         await update.message.reply_audio(audio=open(file_name, 'rb'))
         os.remove(file_name)
     except Exception as e:
