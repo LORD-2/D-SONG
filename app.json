@@ -1,7 +1,7 @@
 {
   "name": "music-download-bot",
   "description": "A Telegram bot to download music.",
-  "repository": "https://github.com/YOUR_USERNAME/YOUR_REPOSITORY",
+  "repository": "https://github.com/LORD-2/D-SONG.git",
   "logo": "https://telegra.ph/file/4d756cb27672089713a79.jpg",
   "keywords": ["telegram", "bot", "music", "download"],
   "env": {
