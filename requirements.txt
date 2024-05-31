@@ -1,4 +1,4 @@
-python-telegram-bot==20.0
-pytube
+pyrogram
+youtube_search
+requests
 yt-dlp
-youtube-search-python
