@@ -1,0 +1,14 @@
+{
+  "name": "music-download-bot",
+  "description": "A Telegram bot to download music.",
+  "repository": "https://github.com/YOUR_USERNAME/YOUR_REPOSITORY",
+  "logo": "https://telegra.ph/file/4d756cb27672089713a79.jpg",
+  "keywords": ["telegram", "bot", "music", "download"],
+  "env": {
+    "TELEGRAM_TOKEN": {
+      "description": "The token for the Telegram bot",
+      "required": true,
+      "value": "YOUR_TELEGRAM_BOT_TOKEN"
+    }
+  }
+}
