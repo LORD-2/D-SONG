@@ -1,18 +1,17 @@
-
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from pytube import YouTube, Search
 import os
 
-TOKEN = os.getenv( TELEGRAM_TOKEN )
+TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text( أهلاً! استخدم الأمر /تحميل متبوعًا باسم الأغنية للبحث عنها وتنزيلها. )
+    await update.message.reply_text('أهلاً! استخدم الأمر /تحميل متبوعًا باسم الأغنية للبحث عنها وتنزيلها.')
 
 async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query =    .join(context.args)
+    query = ' '.join(context.args)
     if not query:
-        await update.message.reply_text( يرجى إدخال اسم الأغنية بعد الأمر /تحميل. )
+        await update.message.reply_text('يرجى إدخال اسم الأغنية بعد الأمر /تحميل.')
         return
 
     try:
@@ -26,10 +25,10 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         output_file = stream.download()
         
         # إرسال الملف الصوتي عبر تليجرام
-        await update.message.reply_audio(audio=open(output_file,  rb ))
+        await update.message.reply_audio(audio=open(output_file, 'rb'))
         os.remove(output_file)
     except Exception as e:
-        await update.message.reply_text(f حدث خطأ أثناء التحميل: {e} )
+        await update.message.reply_text(f'حدث خطأ أثناء التحميل: {e}')
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_text = update.message.text
@@ -45,5 +44,5 @@ def main() -> None:
 
     application.run_polling()
 
-if __name__ ==  __main__ :
+if __name__ == '__main__':
     main()
