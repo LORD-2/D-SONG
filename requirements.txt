@@ -1,4 +1,4 @@
 python-telegram-bot==20.0
-mutagen
+pytube
 yt-dlp
 youtube-search-python
