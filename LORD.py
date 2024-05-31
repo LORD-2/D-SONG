@@ -13,18 +13,18 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if message_text.startswith("تحميل"):
         query = message_text[len("تحميل"):].strip()
     else:
-        await update.message.reply_text('يرجى استخدام كلمة "تحميل" متبوعًا باسم الأغنية.')
+        await update.message.reply_text('يرجى استخدام كلمة "تحميل" متبوعًا باسم الأغنية.', reply_to_message_id=update.message.message_id)
         return
 
     if not query:
-        await update.message.reply_text('يرجى إدخال اسم الأغنية بعد كلمة "تحميل".')
+        await update.message.reply_text('يرجى إدخال اسم الأغنية بعد كلمة "تحميل".', reply_to_message_id=update.message.message_id)
         return
 
     try:
         search = Search(query)
         results = search.results
         if not results:
-            await update.message.reply_text('لم يتم العثور على نتائج.')
+            await update.message.reply_text('لم يتم العثور على نتائج.', reply_to_message_id=update.message.message_id)
             return
 
         video = results[0]
@@ -34,10 +34,10 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         audio_stream = yt.streams.filter(only_audio=True).first()
         file_name = audio_stream.download(filename=f"{yt.title}.mp3")
 
-        await update.message.reply_audio(audio=open(file_name, 'rb'))
+        await update.message.reply_audio(audio=open(file_name, 'rb'), reply_to_message_id=update.message.message_id)
         os.remove(file_name)
     except Exception as e:
-        await update.message.reply_text(f'حدث خطأ أثناء التحميل: {e}')
+        await update.message.reply_text(f'حدث خطأ أثناء التحميل: {e}', reply_to_message_id=update.message.message_id)
 
 def main() -> None:
     application = ApplicationBuilder().token(TOKEN).build()
