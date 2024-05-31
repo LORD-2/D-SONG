@@ -1,10 +1,7 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from mutagen.easyid3 import EasyID3
-from youtubesearchpython import VideosSearch
-import yt_dlp
+from pytube import Search, YouTube
 import os
-import re
 
 TOKEN = os.getenv('TELEGRAM_TOKEN')
 
@@ -13,10 +10,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         'أهلاً! استخدم كلمة "تحميل" متبوعًا باسم الأغنية للبحث عنها وتنزيلها.',
         reply_to_message_id=update.message.message_id
     )
-
-def sanitize_filename(filename: str) -> str:
-    # Remove or replace invalid characters
-    return re.sub(r'[\\/*?:"<>|]', "", filename)
 
 async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_text = update.message.text
@@ -43,42 +36,21 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
     
     try:
-        # Search for the video on YouTube
-        videos_search = VideosSearch(query, limit=1)
-        results = videos_search.result()
-        if not results['result']:
+        search = Search(query)
+        results = search.results
+        if not results:
             await update.message.reply_text(
                 'لم يتم العثور على نتائج.',
                 reply_to_message_id=update.message.message_id
             )
             return
 
-        video = results['result'][0]
-        video_url = video['link']
+        video = results[0]
+        video_url = video.watch_url
 
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': '%(title)s.%(ext)s',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'ffmpeg_location': '/app/.heroku/vendor/bin/'  # Specify the ffmpeg location on Heroku
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(video_url, download=True)
-            file_name = ydl.prepare_filename(info_dict).replace('.webm', '.mp3').replace('.m4a', '.mp3')
-
-        sanitized_title = sanitize_filename(info_dict['title'])
-        os.rename(file_name, f"{sanitized_title}.mp3")
-        file_name = f"{sanitized_title}.mp3"
-
-        # تعديل البيانات الوصفية للملف الصوتي
-        audio = EasyID3(file_name)
-        audio['artist'] = 'BY LORD'
-        audio.save()
+        yt = YouTube(video_url)
+        audio_stream = yt.streams.filter(only_audio=True).first()
+        file_name = audio_stream.download(filename=f"{yt.title}.mp3")
 
         await update.message.reply_audio(
             audio=open(file_name, 'rb'),
