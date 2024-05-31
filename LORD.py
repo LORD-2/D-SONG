@@ -1,81 +1,73 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from pytube import Search, YouTube
+
+from pyrogram import Client, filters
+from youtube_search import YoutubeSearch
+import requests
 import os
+import yt_dlp
 
-TOKEN = os.getenv('TELEGRAM_TOKEN')
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+TOKEN = os.getenv("TOKEN")
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(
-        'أهلاً! استخدم كلمة "تحميل" متبوعًا باسم الأغنية للبحث عنها وتنزيلها.',
-        reply_to_message_id=update.message.message_id
-    )
+app = Client("song_downloader", api_id=API_ID, api_hash=API_HASH, bot_token=TOKEN)
 
-async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    message_text = update.message.text
-    if message_text.startswith("تحميل"):
-        query = message_text[len("تحميل"):].strip()
-    else:
-        await update.message.reply_text(
-            'يرجى استخدام كلمة "تحميل" متبوعًا باسم الأغنية.',
-            reply_to_message_id=update.message.message_id
-        )
-        return
-
-    if not query:
-        await update.message.reply_text(
-            'يرجى إدخال اسم الأغنية بعد كلمة "تحميل".',
-            reply_to_message_id=update.message.message_id
-        )
-        return
-
-    # Send "جاري تحميل الأغنية" message
-    loading_message = await update.message.reply_text(
-        'جاري تحميل الأغنية...',
-        reply_to_message_id=update.message.message_id
-    )
-    
+@app.on_message(filters.command(["song", "بحث", "music", "تحميل", "تنزيل"]))
+async def song_downloader(client, message):
+    query = " ".join(message.command[1:])
+    m = await message.reply_text("<b>⇜ جـارِ البحث عـن المقطـع الصـوتـي . . .</b>")
+    ydl_ops = {
+         format :  bestaudio[ext=m4a] ,
+         keepvideo : True,
+         prefer_ffmpeg : False,
+         geo_bypass : True,
+         outtmpl :  %(title)s.%(ext)s ,
+         quite : True,
+    }
     try:
-        search = Search(query)
-        results = search.results
-        if not results:
-            await update.message.reply_text(
-                'لم يتم العثور على نتائج.',
-                reply_to_message_id=update.message.message_id
-            )
-            return
+        results = YoutubeSearch(query, max_results=1).to_dict()
+        link = f"https://youtube.com{results[0][ url_suffix ]}"
+        title = results[0]["title"][:40]
+        thumbnail = results[0]["thumbnails"][0]
+        thumb_name = f"{title}.jpg"
+        thumb = requests.get(thumbnail, allow_redirects=True)
+        open(thumb_name, "wb").write(thumb.content)
+        duration = results[0]["duration"]
 
-        video = results[0]
-        video_url = video.watch_url
-
-        yt = YouTube(video_url)
-        audio_stream = yt.streams.filter(only_audio=True).first()
-        file_name = audio_stream.download(filename=f"{yt.title}.mp3")
-
-        await update.message.reply_audio(
-            audio=open(file_name, 'rb'),
-            reply_to_message_id=update.message.message_id
-        )
-        os.remove(file_name)
     except Exception as e:
-        await update.message.reply_text(
-            f'حدث خطأ أثناء التحميل: {e}',
-            reply_to_message_id=update.message.message_id
+        await m.edit("- لم يتم العثـور على نتائج ؟!\n- حـاول مجـدداً . . .")
+        print(str(e))
+        return
+    await m.edit("<b>⇜ جـارِ التحميل ▬▭ . . .</b>")
+    try:
+        with yt_dlp.YoutubeDL(ydl_ops) as ydl:
+            info_dict = ydl.extract_info(link, download=False)
+            audio_file = ydl.prepare_filename(info_dict)
+            ydl.process_info(info_dict)
+        rep = f"𖡃 ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ ʙʏ @{app.username} "
+        host = str(info_dict["uploader"])
+        secmul, dur, dur_arr = 1, 0, duration.split(":")
+        for i in range(len(dur_arr) - 1, -1, -1):
+            dur += int(float(dur_arr[i])) * secmul
+            secmul *= 60
+        await m.edit("<b>⇜ جـارِ الرفـع ▬▬ . . .</b>")
+        await message.reply_audio(
+            audio=audio_file,
+            caption=rep,
+            title=title,
+            performer=host,
+            thumb=thumb_name,
+            duration=dur,
         )
-    finally:
-        # Delete "جاري تحميل الأغنية" message
-        await context.bot.delete_message(
-            chat_id=update.message.chat_id,
-            message_id=loading_message.message_id
-        )
+        await m.delete()
 
-def main() -> None:
-    application = ApplicationBuilder().token(TOKEN).build()
+    except Exception as e:
+        await m.edit(" error, wait for bot owner to fix")
+        print(e)
 
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & filters.Regex(r'^تحميل'), download))
+    try:
+        remove_if_exists(audio_file)
+        remove_if_exists(thumb_name)
+    except Exception as e:
+        print(e)
 
-    application.run_polling()
-
-if __name__ == '__main__':
-    main()
+app.run()
