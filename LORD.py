@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-import youtube_dl
+import yt_dlp as youtube_dl
 import os
 
 TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -21,12 +21,15 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         'noplaylist': True
     }
 
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(f"ytsearch:{query}", download=True)
-        file_name = ydl.prepare_filename(info_dict['entries'][0])
-
-    await update.message.reply_audio(audio=open(file_name, 'rb'))
-    os.remove(file_name)
+    try:
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(f"ytsearch:{query}", download=True)
+            file_name = ydl.prepare_filename(info_dict['entries'][0])
+        
+        await update.message.reply_audio(audio=open(file_name, 'rb'))
+        os.remove(file_name)
+    except Exception as e:
+        await update.message.reply_text(f'حدث خطأ أثناء التحميل: {e}')
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_text = update.message.text
