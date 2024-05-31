@@ -2,6 +2,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from pytube import Search, YouTube
 import os
+import asyncio
 
 TOKEN = os.getenv('TELEGRAM_TOKEN')
 
@@ -20,6 +21,9 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text('يرجى إدخال اسم الأغنية بعد كلمة "تحميل".', reply_to_message_id=update.message.message_id)
         return
 
+    # Send "جاري تحميل الأغنية" message
+    loading_message = await update.message.reply_text('جاري تحميل الأغنية...', reply_to_message_id=update.message.message_id)
+    
     try:
         search = Search(query)
         results = search.results
@@ -38,6 +42,9 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         os.remove(file_name)
     except Exception as e:
         await update.message.reply_text(f'حدث خطأ أثناء التحميل: {e}', reply_to_message_id=update.message.message_id)
+    finally:
+        # Delete "جاري تحميل الأغنية" message
+        await context.bot.delete_message(chat_id=update.message.chat_id, message_id=loading_message.message_id)
 
 def main() -> None:
     application = ApplicationBuilder().token(TOKEN).build()
