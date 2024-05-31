@@ -1,5 +1,6 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from youtube_search import YoutubeSearch
 import yt_dlp as youtube_dl
 import os
 
@@ -20,18 +21,24 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text('يرجى إدخال اسم الأغنية بعد كلمة "تحميل".')
         return
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': '%(title)s.%(ext)s',
-        'quiet': True,
-        'noplaylist': True,
-    }
-
     try:
+        results = YoutubeSearch(query, max_results=1).to_dict()
+        if not results:
+            await update.message.reply_text('لم يتم العثور على نتائج.')
+            return
+        
+        video_url = f"https://www.youtube.com{results[0]['url_suffix']}"
+        
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': '%(title)s.%(ext)s',
+            'quiet': True,
+            'noplaylist': True,
+        }
+
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(f"ytsearch:{query}", download=True)
-            video = info_dict['entries'][0]
-            file_name = ydl.prepare_filename(video)
+            info_dict = ydl.extract_info(video_url, download=True)
+            file_name = ydl.prepare_filename(info_dict)
         
         await update.message.reply_audio(audio=open(file_name, 'rb'))
         os.remove(file_name)
