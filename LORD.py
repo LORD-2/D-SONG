@@ -16,12 +16,12 @@ async def song_downloader(client, message):
     query = " ".join(message.command[1:])
     m = await message.reply_text("<b>⇜ جـارِ البحث عـن المقطـع الصـوتـي . . .</b>")
     ydl_ops = {
-         format :  bestaudio[ext=m4a] ,
-         keepvideo : True,
-         prefer_ffmpeg : False,
-         geo_bypass : True,
-         outtmpl :  %(title)s.%(ext)s ,
-         quite : True,
+         'format' :  'bestaudio[ext=m4a]' ,
+         'keepvideo' : True,
+         'prefer_ffmpeg' : False,
+         'geo_bypass' : True,
+         'outtmpl' :  '%(title)s.%(ext)s' ,
+         'quite' : True,
     }
     try:
         results = YoutubeSearch(query, max_results=1).to_dict()
