@@ -64,6 +64,7 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
+            'ffmpeg_location': '/app/.heroku/vendor/bin/'  # Specify the ffmpeg location on Heroku
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
