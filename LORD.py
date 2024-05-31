@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from pytube import YouTube, Search
+import yt_dlp as youtube_dl
 import os
 
 TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -20,19 +20,21 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text('يرجى إدخال اسم الأغنية بعد كلمة "تحميل".')
         return
 
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': '%(title)s.%(ext)s',
+        'quiet': True,
+        'noplaylist': True,
+    }
+
     try:
-        # البحث عن الفيديو باستخدام pytube
-        search = Search(query)
-        video = search.results[0]
-        yt = YouTube(video.watch_url)
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(f"ytsearch:{query}", download=True)
+            video = info_dict['entries'][0]
+            file_name = ydl.prepare_filename(video)
         
-        # تنزيل الفيديو كملف صوتي
-        stream = yt.streams.filter(only_audio=True).first()
-        output_file = stream.download()
-        
-        # إرسال الملف الصوتي عبر تليجرام
-        await update.message.reply_audio(audio=open(output_file, 'rb'))
-        os.remove(output_file)
+        await update.message.reply_audio(audio=open(file_name, 'rb'))
+        os.remove(file_name)
     except Exception as e:
         await update.message.reply_text(f'حدث خطأ أثناء التحميل: {e}')
 
