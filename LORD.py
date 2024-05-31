@@ -1,9 +1,8 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from pytube import YouTube
 from mutagen.easyid3 import EasyID3
-from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB
-from youtubesearchpython import VideosSearch
+from youtube_search import YoutubeSearch
+import yt_dlp
 import os
 import re
 
@@ -42,34 +41,37 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         'جاري تحميل الأغنية...',
         reply_to_message_id=update.message.message_id
     )
-
+    
     try:
-        videos_search = VideosSearch(query, limit=1)
-        results = videos_search.result()
-        if not results['result']:
+        # Search for the video on YouTube
+        results = YoutubeSearch(query, max_results=1).to_dict()
+        if not results:
             await update.message.reply_text(
                 'لم يتم العثور على نتائج.',
                 reply_to_message_id=update.message.message_id
             )
             return
 
-        video = results['result'][0]
-        video_url = video['link']
+        video = results[0]
+        video_url = f"https://www.youtube.com{video['url_suffix']}"
 
-        yt = YouTube(video_url)
-        audio_stream = yt.streams.filter(only_audio=True).first()
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': '%(title)s.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+        }
 
-        sanitized_title = sanitize_filename(yt.title)
-        file_name = audio_stream.download(filename=f"{sanitized_title}.mp3")
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(video_url, download=True)
+            file_name = ydl.prepare_filename(info_dict).replace('.webm', '.mp3').replace('.m4a', '.mp3')
 
-        # إضافة علامة ID3 الأساسية إذا لم تكن موجودة
-        try:
-            audio = EasyID3(file_name)
-        except Exception:
-            audio = ID3()
-            audio.add(TIT2(encoding=3, text=sanitized_title))
-            audio.add(TPE1(encoding=3, text='BY LORD'))
-            audio.save(file_name)
+        sanitized_title = sanitize_filename(info_dict['title'])
+        os.rename(file_name, f"{sanitized_title}.mp3")
+        file_name = f"{sanitized_title}.mp3"
 
         # تعديل البيانات الوصفية للملف الصوتي
         audio = EasyID3(file_name)
