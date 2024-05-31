@@ -1,7 +1,8 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from pytube import Search, YouTube
+from pytube import YouTube
 from mutagen.easyid3 import EasyID3
+from youtubesearchpython import VideosSearch
 import os
 
 TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -37,17 +38,17 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
     try:
-        search = Search(query)
-        results = search.results
-        if not results:
+        videos_search = VideosSearch(query, limit=1)
+        results = videos_search.result()
+        if not results['result']:
             await update.message.reply_text(
                 'لم يتم العثور على نتائج.',
                 reply_to_message_id=update.message.message_id
             )
             return
 
-        video = results[0]
-        video_url = video.watch_url
+        video = results['result'][0]
+        video_url = video['link']
 
         yt = YouTube(video_url)
         audio_stream = yt.streams.filter(only_audio=True).first()
