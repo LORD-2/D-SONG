@@ -6,12 +6,18 @@ import os
 TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('أهلاً! استخدم الأمر /تحميل متبوعًا باسم الأغنية للبحث عنها وتنزيلها.')
+    await update.message.reply_text('أهلاً! استخدم كلمة "تحميل" متبوعًا باسم الأغنية للبحث عنها وتنزيلها.')
 
 async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = ' '.join(context.args)
+    message_text = update.message.text
+    if message_text.startswith("تحميل"):
+        query = message_text[len("تحميل"):].strip()
+    else:
+        await update.message.reply_text('يرجى استخدام كلمة "تحميل" متبوعًا باسم الأغنية.')
+        return
+
     if not query:
-        await update.message.reply_text('يرجى إدخال اسم الأغنية بعد الأمر /تحميل.')
+        await update.message.reply_text('يرجى إدخال اسم الأغنية بعد كلمة "تحميل".')
         return
 
     try:
@@ -30,17 +36,11 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception as e:
         await update.message.reply_text(f'حدث خطأ أثناء التحميل: {e}')
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    message_text = update.message.text
-    if message_text.startswith("/تحميل"):
-        context.args = message_text.split()[1:]
-        await download(update, context)
-
 def main() -> None:
     application = ApplicationBuilder().token(TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(MessageHandler(filters.TEXT & filters.Regex(r'^تحميل'), download))
 
     application.run_polling()
 
