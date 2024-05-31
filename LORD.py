@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from mutagen.easyid3 import EasyID3
-from youtube_search import YoutubeSearch
+from youtubesearchpython import VideosSearch
 import yt_dlp
 import os
 import re
@@ -44,16 +44,17 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     try:
         # Search for the video on YouTube
-        results = YoutubeSearch(query, max_results=1).to_dict()
-        if not results:
+        videos_search = VideosSearch(query, limit=1)
+        results = videos_search.result()
+        if not results['result']:
             await update.message.reply_text(
                 'لم يتم العثور على نتائج.',
                 reply_to_message_id=update.message.message_id
             )
             return
 
-        video = results[0]
-        video_url = f"https://www.youtube.com{video['url_suffix']}"
+        video = results['result'][0]
+        video_url = video['link']
 
         ydl_opts = {
             'format': 'bestaudio/best',
