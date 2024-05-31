@@ -7,17 +7,17 @@
     "API_ID": {
       "description": "ضع الايبي ايدي",
       "required": true,
-      "value": ""
+      "value": "23075806"
     },
     "API_HASH": {
       "description": "ضع الايبي هاش",
       "required": true,
-      "value": ""
+      "value": "0d6040d98085b6b993dd595520fa282a"
     },
     "TOKEN": {
       "description": "ضع توكن بوتك",
       "required": true,
-      "value": ""
+      "value": "7281688627:AAFhDN44LP1p0KsIcjF8U2Yl-pD2cPphLzk"
     }
   },
   "buildpacks": [
