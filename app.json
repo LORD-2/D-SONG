@@ -1,14 +1,28 @@
 {
-  "name": "music-download-bot",
-  "description": "A Telegram bot to download music.",
+  "name": "song-downloader-bot",
+  "description": "A Telegram bot for downloading songs from YouTube.",
   "repository": "https://github.com/LORD-2/D-SONG.git",
   "logo": "https://telegra.ph/file/4d756cb27672089713a79.jpg",
-  "keywords": ["telegram", "bot", "music", "download"],
   "env": {
-    "TELEGRAM_TOKEN": {
-      "description": "The token for the Telegram bot",
+    "API_ID": {
+      "description": "ضع الايبي ايدي",
       "required": true,
-      "value": "YOUR_TELEGRAM_BOT_TOKEN"
+      "value": ""
+    },
+    "API_HASH": {
+      "description": "ضع الايبي هاش",
+      "required": true,
+      "value": ""
+    },
+    "TOKEN": {
+      "description": "ضع توكن بوتك",
+      "required": true,
+      "value": ""
     }
-  }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
 }
