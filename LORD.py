@@ -1,35 +1,35 @@
+
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-import yt_dlp as youtube_dl
+from pytube import YouTube, Search
 import os
 
-TOKEN = os.getenv('TELEGRAM_TOKEN')
+TOKEN = os.getenv( TELEGRAM_TOKEN )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('أهلاً! استخدم الأمر /تحميل متبوعًا باسم الأغنية للبحث عنها وتنزيلها.')
+    await update.message.reply_text( أهلاً! استخدم الأمر /تحميل متبوعًا باسم الأغنية للبحث عنها وتنزيلها. )
 
 async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = ' '.join(context.args)
+    query =    .join(context.args)
     if not query:
-        await update.message.reply_text('يرجى إدخال اسم الأغنية بعد الأمر /تحميل.')
+        await update.message.reply_text( يرجى إدخال اسم الأغنية بعد الأمر /تحميل. )
         return
-    
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': '%(title)s.%(ext)s',
-        'quiet': True,
-        'noplaylist': True
-    }
 
     try:
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(f"ytsearch:{query}", download=True)
-            file_name = ydl.prepare_filename(info_dict['entries'][0])
+        # البحث عن الفيديو باستخدام pytube
+        search = Search(query)
+        video = search.results[0]
+        yt = YouTube(video.watch_url)
         
-        await update.message.reply_audio(audio=open(file_name, 'rb'))
-        os.remove(file_name)
+        # تنزيل الفيديو كملف صوتي
+        stream = yt.streams.filter(only_audio=True).first()
+        output_file = stream.download()
+        
+        # إرسال الملف الصوتي عبر تليجرام
+        await update.message.reply_audio(audio=open(output_file,  rb ))
+        os.remove(output_file)
     except Exception as e:
-        await update.message.reply_text(f'حدث خطأ أثناء التحميل: {e}')
+        await update.message.reply_text(f حدث خطأ أثناء التحميل: {e} )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_text = update.message.text
@@ -45,5 +45,5 @@ def main() -> None:
 
     application.run_polling()
 
-if __name__ == '__main__':
+if __name__ ==  __main__ :
     main()
