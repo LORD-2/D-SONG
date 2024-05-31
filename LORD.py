@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from pytube import Search, YouTube
+from mutagen.easyid3 import EasyID3
 import os
 
 TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -34,7 +35,7 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         'جاري تحميل الأغنية...',
         reply_to_message_id=update.message.message_id
     )
-    
+
     try:
         search = Search(query)
         results = search.results
@@ -51,6 +52,11 @@ async def download(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         yt = YouTube(video_url)
         audio_stream = yt.streams.filter(only_audio=True).first()
         file_name = audio_stream.download(filename=f"{yt.title}.mp3")
+
+        # تعديل البيانات الوصفية للملف الصوتي
+        audio = EasyID3(file_name)
+        audio['artist'] = 'BY LORD'
+        audio.save()
 
         await update.message.reply_audio(
             audio=open(file_name, 'rb'),
